@@ -1,6 +1,6 @@
 setup_options = dict(
     name='scout',
-    version=__version__,
+    version='0.1',
     description='Benchmark tools for generating SCOUT dataset',
     long_description=open('README.rst').read(),
     author='NCSU Operating Research Lab',
