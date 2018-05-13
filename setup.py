@@ -6,8 +6,6 @@ setup_options = dict(
     author='NCSU Operating Research Lab',
     url='https://github.com/oxhead/scout-scripts',
     scripts=['sbin/myaws_allinone', 'sbin/myhadoop_dist'],
-    packages=find_packages(exclude=['tests*']),
-    package_data={'haascli': ['examples/*/*.rst']},
     install_requires=[
         'boto3',
         'click',
