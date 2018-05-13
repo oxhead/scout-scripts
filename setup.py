@@ -1,3 +1,5 @@
+from setuptools import setup, find_packages
+
 setup_options = dict(
     name='scout',
     version='0.1',
@@ -6,6 +8,7 @@ setup_options = dict(
     author='NCSU Operating Research Lab',
     url='https://github.com/oxhead/scout-scripts',
     scripts=['sbin/myaws_allinone', 'sbin/myhadoop_dist'],
+    packages=find_packages(exclude=['tests*']),
     install_requires=[
         'boto3',
         'click',
