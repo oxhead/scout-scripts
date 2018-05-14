@@ -1,7 +1,6 @@
 import getpass
 import os
 import platform
-import psutil
 import json
 
 import click
