@@ -51,7 +51,6 @@ def run(ctx, *args, **kwargs):
 
 def _generate_launch_script(workload_list, terminate=True, scout_dir="/opt/scout", script_dir="/opt/scout/scripts"):
     workload_str = " ".join(['"{}"'.format(workload) for workload in workload_list])
-    # TODO: add as builtin functions
     launch_script = '''#!/bin/bash -ex
 setup_ami()
 {''' + '''
@@ -69,7 +68,7 @@ setup_ami()
 }
 mybenchmark()
 {''' + '''
-    /bin/bash {}/auto_benchmark_dist.sh {}'''.format(script_dir, workload_str) + '''
+    /bin/bash {}/auto_benchmark.sh {}'''.format(script_dir, workload_str) + '''
 }
 
 echo 'Executing the launch script' |& tee -a /tmp/init.out
