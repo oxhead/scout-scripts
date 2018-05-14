@@ -2,7 +2,6 @@ import getpass
 import os
 import time
 import platform
-import psutil
 import json
 import datetime
 from timeit import default_timer
