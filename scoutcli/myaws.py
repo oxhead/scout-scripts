@@ -33,7 +33,7 @@ def cli(ctx, **kwargs):
 @click.option('--availability-zone', default='us-east-1e')
 @click.option('--user-data', default=None)
 @click.option('--spot-price', default=None)
-@click.option('--cluster-mode', default='n+1', type=click.Choice(['single', 'n+1'])
+@click.option('--cluster-mode', default='n+1', type=click.Choice(['single', 'n+1']))
 @click.option('--s3-bucket', default='scout', help="The S3 bucket to store benchmark results")
 @click.option('--scout-dir', default='/opt/scout', help="The scout-cli directory in AMI")
 @click.option('--script-dir', default='/opt/scout/scripts', help="The help scripts to run benchmarks in AMI")
