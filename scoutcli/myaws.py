@@ -33,51 +33,53 @@ def cli(ctx, **kwargs):
 @click.option('--availability-zone', default='us-east-1e')
 @click.option('--user-data', default=None)
 @click.option('--spot-price', default=None)
-@click.option('--cluster-mode', default='n+1')
+@click.option('--cluster-mode', default='n+1', type=click.Choice(['single', 'n+1'])
 @click.option('--s3-bucket', default='scout', help="The S3 bucket to store benchmark results")
+@click.option('--scout-dir', default='/opt/scout', help="The scout-cli directory in AMI")
+@click.option('--script-dir', default='/opt/scout/scripts', help="The help scripts to run benchmarks in AMI")
 @click.option('--dry-run/--no-dry-run', default=False)
 @click.option('--terminate/--no-terminate', default=True)
 @click.pass_context
 def run(ctx, *args, **kwargs):
     client = boto3.client('ec2')
-    kwargs['user_data'] = _generate_launch_script(kwargs['workload'], kwargs['terminate']) if kwargs['user_data'] is None else kwargs['user_data']
+    kwargs['user_data'] = _generate_launch_script(kwargs['workload'], kwargs['terminate'], kwargs['scout_dir'], kwargs['script_dir']) if kwargs['user_data'] is None else kwargs['user_data']
     kwargs['spot_price'] = _get_spot_price(kwargs['instance_type']) if kwargs['spot_price'] is None else kwargs['spot_price']
     print(kwargs['user_data'])
     print(base64.b64encode(kwargs['user_data'].encode()).decode())
     _request_spot_instance(client, **kwargs)
 
 
-def _generate_launch_script(workload_list, terminate=True):
+def _generate_launch_script(workload_list, terminate=True, scout_dir="/opt/scout", script_dir="/opt/scout/scripts"):
     workload_str = " ".join(['"{}"'.format(workload) for workload in workload_list])
     # TODO: add as builtin functions
     launch_script = '''#!/bin/bash -ex
 setup_ami()
-{
+{''' + '''
     echo Setup AMI for SCOUT
 
     # get scout codes
-    SCOUT_DIR=/opt/scout
+    SCOUT_DIR='{}'
     sudo mkdir $SCOUT_DIR
     sudo chmod a+rwx $SCOUT_DIR
     cd $SCOUT_DIR
-    git clone https://github.com/oxhead/scout-scripts.git .
+    git clone https://github.com/oxhead/scout-scripts.git $SCOUT_DIR
 
     # deploy the scout tools
-    pip install --editable ${SCOUT_DIR}/sbin
+    pip install $SCOUT_DIR'''.format(scout_dir) + '''
 }
 mybenchmark()
 {''' + '''
-    auto_benchmark_dist {}' '''.format(workload_str) + '''
+    /bin/bash {}/auto_benchmark_dist.sh {}'''.format(script_dir, workload_str) + '''
 }
 
 echo 'Executing the launch script' |& tee -a /tmp/init.out
-setup_ami |& tee -a /tmp/launch.out
+setup_ami |& tee -a /tmp/init.out
 mybenchmark |& tee -a /tmp/launch.out
 echo 'Executed the launch script' |& tee -a /tmp/init.out
 '''
 
     if terminate:
-        launch_script += "\nbash terminate_fleet.sh'"
+        launch_script += "\n/bin/bash {}/terminate_fleet.sh".format(script_dir)
 
     return launch_script
 

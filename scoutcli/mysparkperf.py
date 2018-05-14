@@ -12,15 +12,15 @@ import executor
 from executor import execute
 from executor.ssh.client import RemoteCommand
 
-from scout.util import helper
-from scout.util import aws as aws_helper
-
-import myhadoop
+from scoutcli.utils import helper
+from scoutcli.utils import aws as aws_helper
+from scoutcli import myhadoop
+from scoutcli.myhibench import HiBenchClusterProfiler
 
 @click.group()
-@click.option('--sparkperf_dir', default="/home/osr/spark-perf", type=click.Path(exists=True, resolve_path=True))
+@click.option('--sparkperf_dir', default="/opt/spark-perf", type=click.Path(exists=True, resolve_path=True))
 @click.option('--hadoop_dir', default="/opt/hadoop", type=click.Path(exists=True, resolve_path=True))
-@click.option('--spark_dir', default="/home/osr/spark-1.5", type=click.Path(exists=True, resolve_path=True))
+@click.option('--spark_dir', default="/opt/spark-1.5.2", type=click.Path(exists=True, resolve_path=True))
 @click.option('--monitoring', type=click.Path(exists=False, resolve_path=True))
 @click.option('--interval', type=int, default=5)
 @click.pass_context
@@ -31,65 +31,78 @@ def cli(ctx, **kwargs):
 
 
 @cli.command()
+@click.option('--master')
+@click.option('--slaves')
 @click.pass_context
-def auto_configure(ctx):
+def auto_configure(ctx, master, slaves):
     # step
-    # 1. configure Hadoop, HDFS and Yarn
+    # 0. common setting
+    slave_list = list(sorted(slaves.split(' ')))
+    print(master)
+    print(slave_list)
     hostname = aws_helper.Instance.get_private_ip()
     instance_type = aws_helper.Instance.get_instance_type()
     print("Instance Type:", instance_type)
     num_cores = aws_helper.Instance.get_num_of_cores()
+    memory_size = ctx.invoke(get_memory, instance=instance_type)
+
+    # 1. configure Hadoop, HDFS and Yarn
+    am_cores = 1  # arbitrary
+    task_cores = 1  # map/reduce task use one core per task
     memory_size = ctx.invoke(get_memory, instance=instance_type)
     ctx.invoke(myhadoop.configure,
                replicas=1,
                hostname=hostname,
                cores=num_cores,
                memory=memory_size,
-               am_memory=ctx.invoke(get_config_profile, instance=instance_type)[3],
-               am_cores=1,
-               parallelism=num_cores
+               am_cores=am_cores,
+               task_cores=task_cores,
+               master=master,
+               slaves=slaves
                )
-
-    # 2. configure HiBench
-    # driver related
-    driver_cores = 1
-    driver_memory, driver_memory_ovherhead = ctx.invoke(get_config_profile, instance=instance_type)[:2]
-
-    # executor related
-    executor_cores = 2  # arbitrary
-    executor_num = int(num_cores / executor_cores)
-    executor_memory_overhead = ctx.invoke(get_config_profile, instance=instance_type)[2]
-    executor_memory = int((memory_size - driver_memory - driver_memory_ovherhead - executor_memory_overhead * executor_num) / executor_num)
-
-    print("Total Cores Usage: {}/{}".format(driver_cores + executor_cores * executor_num, num_cores))
-    print("Total Memory Usage: {}/{}".format(driver_memory + executor_memory * executor_num, memory_size))
 
 
 @cli.command()
-@click.option('--instance', default='c4.large')
+@click.option('--slaves')
+@click.option('--mode')
 @click.pass_context
-def get_spark_env(ctx, instance):
+def get_spark_env(ctx, slaves, mode):
+    instance_type = aws_helper.Instance.get_instance_type()
     num_cores = aws_helper.Instance.get_num_of_cores()
-    memory_size = ctx.invoke(get_memory, instance=instance)
+    memory_size = ctx.invoke(get_memory, instance=instance_type)
 
-    driver_cores = 1
-    driver_memory, driver_memory_overhead = ctx.invoke(get_config_profile, instance=instance)[:2]
+    slave_list = list(sorted(slaves.split(' ')))
 
-    executor_cores = 2  # arbitrary
-    executor_num = int(num_cores / executor_cores)
-    executor_memory_overhead = ctx.invoke(get_config_profile, instance=instance)[2]
-    executor_memory = int((memory_size - driver_memory - driver_memory_overhead - executor_memory_overhead * executor_num) / executor_num)
+    # AppMaster
+    am_cores = 1
+    memory_per_core = int(memory_size / num_cores)
+    am_memory_overhead = 512 if (am_cores * memory_per_core) <= 4096 else 1024
+    # am_memory_overhead = 1024  # should be fine for 2G to 8GB memory per core
+    am_memory = int(am_cores * memory_per_core - am_memory_overhead)
+
+    if mode == 'n+1':
+        driver_local_memory = memory_size
+    else:
+        driver_local_memory = memory_per_core
+
+    executor_cores = 1
+    executor_num = int((len(slave_list) * num_cores - am_cores) / executor_cores)
+    executor_memory_overhead = 512 if (executor_cores * memory_per_core) <= 4096 else 1024
+    executor_memory = int(memory_per_core*executor_cores - executor_memory_overhead - executor_memory_overhead)
+    map_parallelism = num_cores * len(slave_list) * 2
+    reduce_parallelism = num_cores * len(slave_list) * 2
 
     env_settings = {
         #'spark.driver.memory': '{}m'.format(driver_memory),
         'spark.executor.instances': executor_num,
-        'spark.driver.memory': '{}m'.format(1024),
-        'spark.yarn.driver.memoryOverhead': driver_memory_overhead,
+        'spark.executor.cores': executor_cores,
         'spark.executor.memory': '{}m'.format(executor_memory),
+        'spark.driver.memory': '{}m'.format(driver_local_memory),
+        'spark.yarn.driver.memoryOverhead': am_memory_overhead,
         'spark.yarn.executor.memoryOverhead': executor_memory_overhead,  # no unit, different from Spark 2.1
-        'spark.yarn.am.cores': driver_cores,
-        'spark.yarn.am.memory': '{}m'.format(driver_memory),
-        'spark.yarn.am.memoryOverhead': driver_memory_overhead,  # no unit, different from Spark 2.1
+        'spark.yarn.am.cores': am_cores,
+        'spark.yarn.am.memory': '{}m'.format(am_memory),
+        'spark.yarn.am.memoryOverhead': am_memory_overhead,  # no unit, different from Spark 2.1
         'spark.storage.memoryFraction': 0.66,
         'spark.serializer': 'org.apache.spark.serializer.JavaSerializer',
         'spark.shuffle.manager': 'SORT',
@@ -383,6 +396,14 @@ def generate_command(ctx, workload, datasize, num_partitions, output_dir):
                 'num-examples': 100000,
                 'num-features': 10000,
             },
+            'huge': {
+                'num-examples': 500000,
+                'num-features': 25000,
+            },
+            'bigdata': {
+                'num-examples': 1000000,
+                'num-features': 50000,
+            },
         },
         'classification': {
             'warmup': {
@@ -418,6 +439,14 @@ def generate_command(ctx, workload, datasize, num_partitions, output_dir):
             'large': {
                 'num-examples': 400000,
                 'num-features': 10000,
+            },
+            'huge': {
+                'num-examples': 1000000,
+                'num-features': 25000,
+            },
+            'bigdata': {
+                'num-examples': 1000000,
+                'num-features': 50000,
             },
         },
         'decision-tree': {
@@ -511,6 +540,14 @@ def generate_command(ctx, workload, datasize, num_partitions, output_dir):
             },
             'large': {
                 'num-examples': 50000,
+                'num-features': 10000,
+            },
+            'huge': {
+                'num-examples': 1000000,
+                'num-features': 10000,
+            },
+            'bigdata': {
+                'num-examples': 2000000,
                 'num-features': 10000,
             },
         },
@@ -694,6 +731,10 @@ def generate_command(ctx, workload, datasize, num_partitions, output_dir):
                 'num-rows': 2000000,
                 'num-cols': 1000,
             },
+            'huge': {
+                'num-rows': 10000000,
+                'num-cols': 1000,
+            },
         },
         # not usable due to Java out of Heap space
         'chi-sq-gof': {
@@ -750,6 +791,13 @@ def generate_command(ctx, workload, datasize, num_partitions, output_dir):
                 'num-sentences': 400000,
                 'num-words': 10000,
             },
+            'huge': {
+                'num-iterations': 10,
+                'vector-size': 100,
+                'min-count': 5,
+                'num-sentences': 1000000,
+                'num-words': 100000,
+            }
         },
         'fp-growth': {
             'warmup': {
@@ -814,19 +862,21 @@ def generate_command(ctx, workload, datasize, num_partitions, output_dir):
 
 
 @cli.command()
-@click.option('--instance', default='c4.large')
 @click.option('-w', '--workload', help="workload.framework, e.g., wordcount.spark")
 @click.option('--datasize', default='size1')
 @click.option('--output_dir', default=None, type=click.Path(exists=False, resolve_path=True))
 @click.option('--monitoring/--no-monitoring', default=True)
 @click.option('--interval', type=int, default=5)
+@click.option('--timeout', type=int, default=60*60*24)
+@click.option('--slaves')
+@click.option('--mode')
 @click.pass_context
-def run(ctx, instance, workload, datasize, output_dir, monitoring, interval):
+def run(ctx, workload, datasize, output_dir, monitoring, interval, timeout, slaves, mode):
     execute("rm -rf {}; mkdir -p {}".format(output_dir, output_dir))
 
     # 2. prepare env setting?
     # @TODO: num-partitions?  x cores?
-    spark_env = ctx.invoke(get_spark_env, instance=instance)
+    spark_env = ctx.invoke(get_spark_env, slaves=slaves, mode=mode)
     env_settings = {
         'HADOOP_CONF_DIR': "{}/etc/hadoop".format(ctx.obj['hadoop_dir']),
         'SPARK_SUBMIT_OPTS': " ".join(["-D{}={}".format(k, spark_env[k]) for k in spark_env.keys()])
@@ -837,13 +887,15 @@ def run(ctx, instance, workload, datasize, output_dir, monitoring, interval):
 
     # 1. generate commands
     cmd = ctx.invoke(generate_command, workload=workload, datasize=datasize, num_partitions=spark_env['sparkperf.executor.num'], output_dir=output_dir)
+    cmd = "timeout {}s {}".format(timeout, cmd)
     print(cmd)
 
     timestampt = datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S')
 
     if monitoring:
         monitoring_output = os.path.join(output_dir, 'sar.csv')
-        with HiBenchProfiler(monitoring_output, interval) as app_profiler:
+        slave_list = list(sorted(slaves.split(' ')))
+        with HiBenchClusterProfiler(slave_list, monitoring_output, interval) as app_profiler:
             with helper.Timer() as timer:
                 successful = execute(cmd, environment=env_settings, check=False)
     else:
@@ -855,17 +907,13 @@ def run(ctx, instance, workload, datasize, output_dir, monitoring, interval):
         'framework': 'spark1.5',
         'datasize': datasize,
         'completed': successful,
+        'program': workload,
+        'timestamp': timestampt,
+        'input_size': -1,
+        'elapsed_time': timer.elapsed_secs,
+        'throughput_cluster': -1,
+        'throughput_node': -1
     }
-    if successful:
-        # lazy to create variables
-        report.update({
-            'program': workload,
-            'timestamp': timestampt,
-            'input_size': -1,
-            'elapsed_time': timer.elapsed_secs,
-            'throughput_cluster': -1,
-            'throughput_node': -1
-        })
 
     report_json = os.path.join(output_dir, 'report.json')
     with open(report_json, 'w') as f:
@@ -875,30 +923,3 @@ def run(ctx, instance, workload, datasize, output_dir, monitoring, interval):
 
 def _clear_fs_cache():
     execute("sudo bash -c 'sync; echo 3 > /proc/sys/vm/drop_caches'")
-
-
-class HiBenchProfiler(object):
-    def __init__(self, monitoring_output, monitoring_interval=5, verbose=False):
-        self.verbose = verbose
-        self.timer = default_timer
-        self.monitoring_output = monitoring_output
-        self.monitoring_data = monitoring_output + ".dat"
-        self.monitoring_interval = monitoring_interval
-        print("Monitoring output:", self.monitoring_output)
-        print("Monitoring data:", self.monitoring_data)
-        print("Monitoring interval:", self.monitoring_interval)
-
-    def __enter__(self):
-        print("mysar start --output={} --interval={}".format(self.monitoring_data, self.monitoring_interval))
-        execute("mysar start --output={} --interval={}".format(self.monitoring_data, self.monitoring_interval))
-        self.start = self.timer()
-        return self
-
-    def __exit__(self, *args):
-        self.end = self.timer()
-        self.elapsed_secs = self.end - self.start
-        self.elapsed = self.elapsed_secs * 1000  # millisecs
-        execute("mysar stop")
-        execute("mysar export --input={} --output={} --interval={}".format(self.monitoring_data, self.monitoring_output, self.monitoring_interval))
-        if self.verbose:
-            print('elapsed time: %f ms' % self.elapsed)

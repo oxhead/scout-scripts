@@ -66,14 +66,14 @@ config_cluster() {
     for node_ip in ${instance_list};
     do
         echo "Configuring ${node_ip}"
-        (ssh ${node_ip} "myhibench_dist auto_configure --master ${master} --slaves '${node_list}'; myhibench_dist init") &
+        (ssh ${node_ip} "myhibench auto_configure --master ${master} --slaves '${node_list}'; myhibench init") &
     done
     wait
     echo All instances are configured
 }
 
 start_cluster() {
-    ssh ${master} "myhibench_dist start"
+    ssh ${master} "myhibench start"
 }
 
 profile_app() {
@@ -89,7 +89,7 @@ profile_app() {
     enable_upload=${6:-0} # 1=true, 0=false
     timeout=${7:-7200}
 
-    script_name="my${benchmark}_dist"
+    script_name="my${benchmark}"
 
     echo "*******************************"
     echo "Profiling application"
