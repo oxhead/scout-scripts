@@ -7,7 +7,7 @@ setup_options = dict(
     long_description=open('README.rst').read(),
     author='NCSU Operating Research Lab',
     url='https://github.com/oxhead/scout-scripts',
-    packages=['scoutcli'],
+    packages=find_packages(include=['scoutcli*']),
     install_requires=[
         'boto3',
         'click',

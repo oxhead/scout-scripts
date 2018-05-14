@@ -9,8 +9,8 @@ import executor
 from executor import execute
 from executor.ssh.client import RemoteCommand
 
-from scoutcli.util import helper
-from scoutcli.util import aws as aws_helper
+from scoutcli.utils import helper
+from scoutcli.utils import aws as aws_helper
 
 
 @click.group()
