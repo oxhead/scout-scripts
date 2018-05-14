@@ -7,7 +7,7 @@ setup_options = dict(
     long_description=open('README.rst').read(),
     author='NCSU Operating Research Lab',
     url='https://github.com/oxhead/scout-scripts',
-    scripts=['sbin/myaws_allinone', 'sbin/myhadoop_dist'],
+    #scripts=['bin/scout'],
     packages=find_packages(exclude=['tests*']),
     install_requires=[
         'boto3',
@@ -35,6 +35,16 @@ setup_options = dict(
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
     ),
+    entry_points={
+        'console_scripts': [
+            'mysar=mysar:cli',
+            'myhibench=myhibench:cli',
+            'myhadoop=myhadoop:cli',
+            'myspark=myspark:cli',
+            'mysparkperf=mysparkperf:cli',
+            'myaws=myaws:cli',
+        ]
+    }
 )
 
 setup(**setup_options)
