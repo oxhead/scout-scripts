@@ -1,14 +1,13 @@
 from setuptools import setup, find_packages
 
 setup_options = dict(
-    name='scout',
+    name='scout-cli',
     version='0.1',
     description='Benchmark tools for generating SCOUT dataset',
     long_description=open('README.rst').read(),
     author='NCSU Operating Research Lab',
     url='https://github.com/oxhead/scout-scripts',
-    #scripts=['bin/scout'],
-    packages=find_packages(exclude=['tests*']),
+    packages=['scoutcli'],
     install_requires=[
         'boto3',
         'click',
@@ -37,12 +36,12 @@ setup_options = dict(
     ),
     entry_points={
         'console_scripts': [
-            'mysar=mysar:cli',
-            'myhibench=myhibench:cli',
-            'myhadoop=myhadoop:cli',
-            'myspark=myspark:cli',
-            'mysparkperf=mysparkperf:cli',
-            'myaws=myaws:cli',
+            'mysar=scoutcli.mysar:cli',
+            'myhibench=scoutcli.myhibench:cli',
+            'myhadoop=scoutcli.myhadoop:cli',
+            'myspark=scoutcli.myspark:cli',
+            'mysparkperf=scoutcli.mysparkperf:cli',
+            'myaws=scoutcli.myaws:cli',
         ]
     }
 )
