@@ -56,6 +56,9 @@ setup_ami()
 {''' + '''
     echo Setup AMI for SCOUT
 
+    export LC_ALL=en_US.UTF-8
+    export LANG=en_US.UTF-8
+
     # get scout codes
     SCOUT_DIR='{}'
     sudo mkdir -p $SCOUT_DIR

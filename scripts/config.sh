@@ -105,10 +105,21 @@ profile_app() {
     echo - Run Id: ${run_id}
     echo - Profiling: ${enable_upload}
     echo - Timeout: ${timeout}
+    export LANG=en_US.UTF-8
+    export LC_ALL=en_US.UTF-8
+    echo LANG=$LANG
+    echo LC_ALL=$LC_ALL
+    python -c "import locale, codecs; print(locale.getpreferredencoding()); print(codecs.lookup(locale.getpreferredencoding()).name)"
+    echo "[myaws]"
+    myaws -h
+    echo "[myhibench]"
+    myhibench -h
+    echo "[mysparkperf]"
+    mysparkperf -h
 
     # prepare dataset
     if [ "${benchmark}" == "hibench" ]; then
-        bash -c "${script_name} prepare_dataset --workload ${app} --datasize ${datasize}"
+        ${script_name} prepare_dataset --workload ${app} --datasize ${datasize}
     fi
                 
     output_name=${cluster_size}_${instance_type}_${app}_${framework}_${datasize}_${run_id}
@@ -122,7 +133,7 @@ profile_app() {
         workload_id="${app}"
     fi
 
-    bash -c "${script_name} run --timeout ${timeout} --mode ${cluster_mode} --slaves "${node_list}" --workload ${workload_id} --datasize ${datasize} --output_dir ${workload_output} --monitoring"
+    ${script_name} run --timeout ${timeout} --mode ${cluster_mode} --slaves "${node_list}" --workload ${workload_id} --datasize ${datasize} --output_dir ${workload_output} --monitoring
        
     # upload everything even with failures
     if (( $enable_upload > 0 )); then
