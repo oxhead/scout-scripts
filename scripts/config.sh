@@ -45,6 +45,13 @@ s3_bucket=`aws ec2 describe-tags --region ${region} --filters "Name=resource-id,
 # functions
 ##########################
 
+fix_click_on_python3() {
+    export LANG=en_US.UTF-8
+    export LC_ALL=en_US.UTF-8
+    echo LANG=$LANG
+    echo LC_ALL=$LC_ALL
+}
+
 terminate_fleet() {
     aws ec2 --region ${region} cancel-spot-fleet-requests --spot-fleet-request-ids "${fleet_request_id}" --terminate-instances --no-dry-run
 }
@@ -105,10 +112,9 @@ profile_app() {
     echo - Run Id: ${run_id}
     echo - Profiling: ${enable_upload}
     echo - Timeout: ${timeout}
-    #export LANG=en_US.UTF-8
-    #export LC_ALL=en_US.UTF-8
-    echo LANG=$LANG
-    echo LC_ALL=$LC_ALL
+
+    # wordaround to use click on Python 3
+    fix_click_on_python3
 
     # prepare dataset
     if [ "${benchmark}" == "hibench" ]; then
