@@ -105,17 +105,10 @@ profile_app() {
     echo - Run Id: ${run_id}
     echo - Profiling: ${enable_upload}
     echo - Timeout: ${timeout}
-    export LANG=en_US.UTF-8
-    export LC_ALL=en_US.UTF-8
+    #export LANG=en_US.UTF-8
+    #export LC_ALL=en_US.UTF-8
     echo LANG=$LANG
     echo LC_ALL=$LC_ALL
-    python -c "import locale, codecs; print(locale.getpreferredencoding()); print(codecs.lookup(locale.getpreferredencoding()).name)"
-    echo "[myaws]"
-    myaws -h
-    echo "[myhibench]"
-    myhibench -h
-    echo "[mysparkperf]"
-    mysparkperf -h
 
     # prepare dataset
     if [ "${benchmark}" == "hibench" ]; then
