@@ -58,7 +58,7 @@ setup_ami()
 
     # get scout codes
     SCOUT_DIR='{}'
-    sudo mkdir $SCOUT_DIR
+    sudo mkdir -p $SCOUT_DIR
     sudo chmod a+rwx $SCOUT_DIR
     cd $SCOUT_DIR
     git clone https://github.com/oxhead/scout-scripts.git $SCOUT_DIR

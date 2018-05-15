@@ -4,6 +4,10 @@ instance_type=`curl -s http://169.254.169.254/latest/meta-data/instance-type`
 instance_id=`curl -s http://169.254.169.254/latest/meta-data/instance-id`
 region=`curl -s http://169.254.169.254/latest/dynamic/instance-identity/document | jq -r .region`
 node_ip=`curl -s http://169.254.169.254/latest/meta-data/local-ipv4`
+echo "Instance Type: $instance_type"
+echo "Instance Id: $instance_id"
+echo "Region: $region"
+echo "IP: $node_ip"
 
 # retrieve the cluster setting
 fleet_request_id=`aws ec2 describe-tags --region ${region} --filters "Name=resource-id,Values=${instance_id}" | jq -r '.Tags[] | select(.Key=="aws:ec2spot:fleet-request-id") | .Value'`
