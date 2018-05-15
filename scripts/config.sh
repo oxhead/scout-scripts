@@ -108,7 +108,7 @@ profile_app() {
 
     # prepare dataset
     if [ "${benchmark}" == "hibench" ]; then
-        ${script_name} prepare_dataset --workload ${app} --datasize ${datasize}
+        bash -c "${script_name} prepare_dataset --workload ${app} --datasize ${datasize}"
     fi
                 
     output_name=${cluster_size}_${instance_type}_${app}_${framework}_${datasize}_${run_id}
@@ -122,7 +122,7 @@ profile_app() {
         workload_id="${app}"
     fi
 
-    ${script_name} run --timeout ${timeout} --mode ${cluster_mode} --slaves "${node_list}" --workload ${workload_id} --datasize ${datasize} --output_dir ${workload_output} --monitoring
+    bash -c "${script_name} run --timeout ${timeout} --mode ${cluster_mode} --slaves "${node_list}" --workload ${workload_id} --datasize ${datasize} --output_dir ${workload_output} --monitoring"
        
     # upload everything even with failures
     if (( $enable_upload > 0 )); then
