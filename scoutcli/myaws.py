@@ -23,7 +23,7 @@ def cli(ctx, **kwargs):
 @click.option('--instance-num', default=2, help="If 1 is specified, the single-node model will be triggerd.")
 @click.option('--instance-type', default='m4.large')
 @click.option('--keyname', default='scout', help="The keyname created in your AWS account.")
-@click.option('--ami', default='ami-68e57017', help="The default or customized AMI")
+@click.option('--ami', default='ami-2196095e', help="The default or customized AMI")
 @click.option('--iam-fleet-role', default='arn:aws:iam::169987671570:role/aws-ec2-spot-fleet-tagging-role')
 @click.option('--iam-instance-profile', default='arn:aws:iam::169987671570:instance-profile/chin')
 @click.option('--volume-size', default=120)
@@ -56,14 +56,11 @@ setup_ami()
 {''' + '''
     echo Setup AMI for SCOUT
 
-    export LC_ALL=en_US.UTF-8
-    export LANG=en_US.UTF-8
-
     # get scout codes
     SCOUT_DIR='{}'
+    sudo rm -rf $SCOUT_DIR
     sudo mkdir -p $SCOUT_DIR
     sudo chmod a+rwx $SCOUT_DIR
-    cd $SCOUT_DIR
     git clone https://github.com/oxhead/scout-scripts.git $SCOUT_DIR
 
     # deploy the scout tools
