@@ -17,4 +17,4 @@ for w in workload_list:
     print(w)
     workload_strs += ' -w "' + w + '"'
 
-print("myaws run {} --instance-type c4.large --instance-num 3 --ami ami-ca33a7b5 --keyname osr --cluster-mode n+1 --s3-bucket scout-dataset-test --no-terminate --no-dry-run".format(workload_strs))
+print("myaws run {} --instance-type c4.large --instance-num 3 --ami ami-2196095e --keyname scout --cluster-mode n+1 --s3-bucket scout-dataset-test --no-terminate --no-dry-run".format(workload_strs))

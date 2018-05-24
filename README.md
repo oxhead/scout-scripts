@@ -1,6 +1,7 @@
 # scout-scripts
 
-# Prepare your local environment
+## Prepare your local environment
+
 * Clone the repo
 
   ```
@@ -20,19 +21,14 @@
 ## Prepare your AWS environment
 
 * Create S3 buckets for benchmark results, e.g., scout-database
-
 * Create a key pair for accessing (via SSH) the provision benchmark clusters, e.g., scout
-
 * Create an IAM role to grant permission to instances.  The instance profile must have the permission to access EC2, S3 and EC2SpotFleet.  You will need its ARN, e.g., arn:aws:iam::169987671570:instance-profile/chin.
-
 * Create an  IAM role for launch spot instances.  The IAM role must have the AmazonEC2SpotFleetTaggingRole permission.  You will need its ARN, e.g., arn:aws:iam::169987671570:role/aws-ec2-spot-fleet-tagging-role.
-
 * Create a securaity group, e.g., scout, that allows communication among nodes and for you to connect to the master node.
-
 * Prepare VPC
-
   * Create IPv4 CIDR, e.g. 10.0.0.0/16
   * Create a subnet and choose an available zone.  Specify 10.0.1.0/24 for the IPv4 CIDR block.
+* You will need to setup authentication credentials for using the [boto3](https://boto3.readthedocs.io/en/latest/index.html).  Please follow the [official document](https://boto3.readthedocs.io/en/latest/guide/quickstart.html).
 
 
 
@@ -52,16 +48,23 @@
 
 * The benchmark supports both the **single-node** and **multi-node** mode.
 
-* We mailly test them with spot instances.  
+  * In the multi-node mode, you need to specify **n+1** for a cluster size **n**. One extra node will be used as the master node that runs the benchmark client.
 
-* Commands
+* Command usage (please use your own AWS settings)
 
   ```
   myaws run
   	-w "hibench hadoop aggregation medium 1"
-  	--keyname scout --s3-bucket scout-dataset-test
+  	--keyname scout
+  	--ami ami-2196095e
+  	--iam-instance-profile arn:aws:iam::169987671570:instance-profile/chin
+  	--iam-fleet-role arn:aws:iam::169987671570:role/aws-ec2-spot-fleet-tagging-role
+  	--availability-zone us-east-1e  --subnet subnet-5421de6b
+  	--security-group subnet-5421de6b
   	--instance-type c4.large --instance-num 1 --cluster-mode [single|n+1]
   	--volume-size 120
+  	--s3-bucket scout-dataset
+  	--spot-price 0.05
   	--terminate / --no-terminate
   	--dry-run / --no-dry-run
   ```
@@ -148,4 +151,38 @@ The folloing table shows the supported benchmark list.  In the command line abov
 ## Large-scale benchmark
 
 * Do it only when you are confident about the scripts and the benchmark process.
-* The python script at scripts/generate_dist_benchmark.py may give you a hint to create you own script.
+* The python script at [scripts/generate_dist_benchmark.py](scripts/generate_dist_benchmark.py) and [scripts/generate_workloads.py](scripts/generate_workloads.py) may give you hints to create you own script.
+
+## Trobuleshooting
+
+* Sometimes the launch script failed to initialize the cluster.  If you specify **--no-terminate** in your command, your cluster will not be shutdown even after your benchmark failed.  You can login to the master node, and manually run the launch script to restart the benchmark.  Run the following script as root.  You can add and remove  workloads in the mybenchmark function.
+
+  ```
+  #!/bin/bash -ex
+  setup_ami()
+  {
+      echo Setup AMI for SCOUT
+  
+      # get scout codes
+      SCOUT_DIR='/opt/scout'
+      sudo rm -rf $SCOUT_DIR
+      sudo mkdir -p $SCOUT_DIR
+      sudo chmod a+rwx $SCOUT_DIR
+      git clone https://github.com/oxhead/scout-scripts.git $SCOUT_DIR
+  
+      # deploy the scout tools
+      pip install $SCOUT_DIR
+  }
+  mybenchmark()
+  {
+      /bin/bash /opt/scout/scripts/auto_benchmark.sh "hibench hadoop aggregation medium 1"
+      /bin/bash /opt/scout/scripts/auto_benchmark.sh "hibench spark wordcount large 1"
+  }
+  
+  echo 'Executing the launch script' |& tee -a /tmp/init.out
+  setup_ami |& tee -a /tmp/init.out
+  mybenchmark |& tee -a /tmp/launch.out
+  echo 'Executed the launch script' |& tee -a /tmp/init.out
+  ```
+
+  
