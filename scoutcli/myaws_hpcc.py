@@ -66,6 +66,7 @@ setup_ami()
     git checkout -b hpcc original/hpcc
 
     # deploy the scout tools
+    pip3 uninstall scout-cli
     pip3 install $SCOUT_DIR'''.format(scout_dir) + '''
 }
 mybenchmark()

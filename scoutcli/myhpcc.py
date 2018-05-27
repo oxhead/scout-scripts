@@ -72,7 +72,7 @@ def start(ctx):
 
 @cli.command()
 @click.pass_context
-def stop(ctx:
+def stop(ctx):
     execute('sudo service hpcc-init stop; sudo service dafilesrv stop')
 
 
@@ -190,13 +190,6 @@ def execute_workload(ctx, workload, framework, monitoring, interval, timeout, da
     else:
         with helper.Timer() as timer:
             successful = execute(cmd, check=False)
-    report = {
-        'workload': workload,
-        'framework': framework,
-        'datasize': datasize,
-        'input_size': '-1',
-        'completed': successful
-    }
 
     report = {
         'workload': workload,
