@@ -178,7 +178,7 @@ def execute_workload(ctx, workload, framework, monitoring, interval, timeout, da
     execute("mkdir -p {}".format(output_dir))
 
     successful = False
-    parameters = "-X".join(['{}={}'.format(k, v) for k, v in _get_datasize_parameters(workload, datasize)])
+    parameters = "".join(['-X{}={}'.format(k, v) for k, v in _get_datasize_parameters(workload, datasize).items()])
     cmd = "set -o pipefail; timeout {}s {}/bin/ecl run --target {} --ecl-only {} {} |& tee {}/result.log".format(timeout, ctx.obj['hpcc_dir'], framework, parameters, ecl_program, output_dir)
     timestampt = datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S')
     if monitoring:
@@ -220,15 +220,13 @@ def execute_workload(ctx, workload, framework, monitoring, interval, timeout, da
 @cli.command()
 @click.option('-w', '--workload', help="workload name")
 @click.option('--output_dir', default=None, type=click.Path(exists=False, resolve_path=True))
-@click.option('--prepare/--no-prepare', default=False)
 @click.option('--monitoring/--no-monitoring', default=True)
 @click.option('--interval', type=int, default=5)
 @click.option('--timeout', type=int, default=60*60*24)
 @click.option('--datasize')
 @click.option('--slaves')
-@click.option('--mode')
 @click.pass_context
-def run(ctx, workload, output_dir, prepare, monitoring, interval, timeout, datasize, slaves, mode):
+def run(ctx, workload, output_dir, monitoring, interval, timeout, datasize, slaves):
     workload_name = workload.lower()
     framework = 'thor'
 
