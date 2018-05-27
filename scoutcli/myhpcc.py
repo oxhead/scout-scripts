@@ -194,7 +194,7 @@ def execute_workload(ctx, workload, framework, monitoring, interval, timeout, da
         'workload': workload,
         'framework': framework,
         'datasize': datasize,
-        'input_size': '-1':
+        'input_size': '-1',
         'completed': successful
     }
 
