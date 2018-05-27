@@ -42,6 +42,8 @@ setup_options = dict(
             'myspark=scoutcli.myspark:cli',
             'mysparkperf=scoutcli.mysparkperf:cli',
             'myaws=scoutcli.myaws:cli',
+            'myaws_hpcc=scoutcli.myaws_hpcc:cli',
+            'myhpcc=scoutcli.myhpcc:cli',
         ]
     }
 )
