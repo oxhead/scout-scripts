@@ -225,8 +225,9 @@ def execute_workload(ctx, workload, framework, monitoring, interval, timeout, da
 @click.option('--timeout', type=int, default=60*60*24)
 @click.option('--datasize')
 @click.option('--slaves')
+@click.option('--mode')
 @click.pass_context
-def run(ctx, workload, output_dir, monitoring, interval, timeout, datasize, slaves):
+def run(ctx, workload, output_dir, monitoring, interval, timeout, datasize, slaves, mode):
     workload_name = workload.lower()
     framework = 'thor'
 
