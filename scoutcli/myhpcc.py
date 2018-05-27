@@ -79,8 +79,8 @@ def stop(ctx):
 @cli.command()
 @click.pass_context
 def init(ctx):
-    ctx.stop()
-    ctx.clean()
+    ctx.invoke(stop)
+    ctx.invoke(clean)
 
 
 @cli.command()
