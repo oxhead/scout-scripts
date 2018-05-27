@@ -72,7 +72,7 @@ def start(ctx):
 
 @cli.command()
 @click.pass_context
-def stop(ctx):
+def stop(ctx:
     execute('sudo service hpcc-init stop; sudo service dafilesrv stop')
 
 
@@ -178,7 +178,7 @@ def execute_workload(ctx, workload, framework, monitoring, interval, timeout, da
     execute("mkdir -p {}".format(output_dir))
 
     successful = False
-    parameters = "".join(['-X{}={}'.format(k, v) for k, v in _get_datasize_parameters(workload, datasize).items()])
+    parameters = "".join([' -X{}={} '.format(k, v) for k, v in _get_datasize_parameters(workload, datasize).items()])
     cmd = "set -o pipefail; timeout {}s {}/bin/ecl run --target {} --ecl-only {} {} |& tee {}/result.log".format(timeout, ctx.obj['hpcc_dir'], framework, parameters, ecl_program, output_dir)
     timestampt = datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S')
     if monitoring:
