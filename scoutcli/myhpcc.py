@@ -35,7 +35,7 @@ def cli(ctx, **kwargs):
 @click.pass_context
 def auto_configure(ctx, master, slaves):
     slave_list = slaves.split()
-    parallelism = aws_helper.Instance.get_num_of_cores() / 2 
+    parallelism = aws_helper.Instance.get_num_of_cores() // 2 
     ctx.invoke(configure,
                master=master,
                slaves=slaves,
