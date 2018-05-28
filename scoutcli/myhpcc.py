@@ -91,19 +91,19 @@ def clean(ctx):
 def _get_datasize_parameters(workload_name, datasize):
     parameters = {
         ('rf-classification', 'small'): {
-            'num_records_training': 10000,
-            'num_records_test': 10000,
+            'num_records_training': 100000,
+            'num_records_test': 100000,
             'num_trees': 20,
         },
         ('rf-classification', 'medium'): {
-            'num_records_training': 20000,
-            'num_records_test': 20000,
-            'num_trees': 20,
+            'num_records_training': 500000,
+            'num_records_test': 200000,
+            'num_trees': 40,
         },
         ('rf-classification', 'large'): {
-            'num_records_training': 50000,
-            'num_records_test': 50000,
-            'num_trees': 20,
+            'num_records_training': 1000000,
+            'num_records_test': 1000000,
+            'num_trees': 60,
         },
         ('rf-regression', 'small'): {
             'num_records_training': 10000,
@@ -130,13 +130,13 @@ def _get_datasize_parameters(workload_name, datasize):
             'num_workers': 4,
             'item_size': 20000,
             'num_columns': 100,
-            'num_iterations': 50,
+            'num_iterations': 10,
         },
         ('lr', 'small'): {
             'num_workers': 8,
             'item_size': 50000,
             'num_columns': 100,
-            'num_iterations': 100,
+            'num_iterations': 10,
         },
         ('glm', 'small'): {
             'num_workers': 2,
@@ -148,13 +148,13 @@ def _get_datasize_parameters(workload_name, datasize):
             'num_workers': 4,
             'item_size': 20000,
             'num_columns': 100,
-            'num_iterations': 50,
+            'num_iterations': 10,
         },
         ('glm', 'small'): {
             'num_workers': 8,
             'item_size': 50000,
             'num_columns': 100,
-            'num_iterations': 100,
+            'num_iterations': 10,
         },
     }
     return parameters[(workload_name, datasize)]

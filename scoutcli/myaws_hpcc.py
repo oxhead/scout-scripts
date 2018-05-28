@@ -59,14 +59,14 @@ setup_ami()
     # get scout codes
     SCOUT_DIR='{}'
     sudo rm -rf $SCOUT_DIR
-    sudo mkdir -p $SCOUT_DIR
-    sudo chmod a+rwx $SCOUT_DIR
+    # sudo mkdir -p $SCOUT_DIR
+    # sudo chmod a+rwx $SCOUT_DIR
     git clone https://github.com/oxhead/scout-scripts.git $SCOUT_DIR
     cd $SCOUT_DIR
-    git checkout -b hpcc original/hpcc
+    git checkout -b hpcc origin/hpcc
 
     # deploy the scout tools
-    pip3 uninstall scout-cli
+    # pip3 uninstall scout-cli
     pip3 install $SCOUT_DIR'''.format(scout_dir) + '''
 }
 mybenchmark()
